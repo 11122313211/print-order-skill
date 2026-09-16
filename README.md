@@ -143,6 +143,18 @@ python3 validate-skills.py <目录>  # 检查指定技能目录
 - `disableModelInvocation` 这类驼峰旧键会让技能被直接丢弃；
 - 正文提到的 `references/` 与 `scripts/` 文件必须存在，并提示没有被引用的孤儿资源。
 
+## 维护者：发布
+
+发布脚本只依赖 `gh` 的登录态（不接触 token），幂等：仓库不存在就创建并推送，已存在就只推送。
+
+```bash
+gh auth login --hostname github.com --git-protocol https --web   # 首次
+./publish.sh             # → 11122313211/printops-skill（public）
+./publish.sh --private   # 私有
+```
+
+发布前建议先跑 `python3 validate-skills.py`，确保两个技能不会被宿主静默丢弃。
+
 ## 注意事项
 
 - **数据落点**：会话库由 `scripts/printops.sh` 自动选择——真实仓库写 `<仓库根>/data/agent.sqlite3`；
