@@ -1,0 +1,3 @@
+interface:
+  display_name: "PrintOps 印刷订单"
+  short_description: "接本机引擎：整理印刷需求、解释工艺、估算费用量级、准备询价与交接"
