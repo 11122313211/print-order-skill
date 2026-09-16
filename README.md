@@ -49,8 +49,8 @@ Design notes: `description` is the **only** metadata that reaches the model's sk
 ## 30 秒上手
 
 ```bash
-git clone https://github.com/11122313211/printops-skill.git
-cd printops-skill
+git clone https://github.com/11122313211/print-order-skill.git
+cd print-order-skill
 ./install.sh                  # 安装到 ${CODEX_HOME:-~/.codex}/skills/
 ```
 
@@ -82,7 +82,7 @@ cd printops
 ## 目录布局
 
 ```
-printops-skill/
+print-order-skill/
 ├── install.sh                 # 安装/更新到 ${CODEX_HOME:-~/.codex}/skills
 ├── validate-skills.py         # 自检：frontmatter 合法性 + 资源引用完整性
 ├── printops/
@@ -149,7 +149,7 @@ python3 validate-skills.py <目录>  # 检查指定技能目录
 
 ```bash
 gh auth login --hostname github.com --git-protocol https --web   # 首次
-./publish.sh             # → 11122313211/printops-skill（public）
+./publish.sh             # → 11122313211/print-order-skill（public）
 ./publish.sh --private   # 私有
 ```
 

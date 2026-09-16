@@ -2,7 +2,7 @@
 # 把本技能包发布/推送到 GitHub。
 #
 # 用法:
-#   ./publish.sh                          # 发布到 11122313211/printops-skill（public）
+#   ./publish.sh                          # 发布到 11122313211/print-order-skill（public）
 #   ./publish.sh --private                # 私有仓库
 #   ./publish.sh someone/other-repo       # 指定仓库
 #
@@ -15,7 +15,7 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$here"
 
-slug="11122313211/printops-skill"
+slug="11122313211/print-order-skill"
 visibility="--public"
 description="中文商业印刷需求 → 字段可溯源、经人工确认的订单交接单（printops / printops-lite）"
 
