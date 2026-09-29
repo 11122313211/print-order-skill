@@ -1,3 +1,4 @@
+# PrintOps v1.2.0 snapshot (upstream 11122313211/PrintOps@9f21c0e, synced 2026-09-29).
 """Whitelisted agent tools: recommendation, preflight, validation, handoff.
 
 Split from agent.py.  Tools are pure functions over the order model plus the

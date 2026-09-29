@@ -1,3 +1,4 @@
+# PrintOps v1.2.0 snapshot (upstream 11122313211/PrintOps@9f21c0e, synced 2026-09-29).
 """Provider-neutral supplier adapter contracts.
 
 Adapters only map the standard order and prepare an explicit request payload.

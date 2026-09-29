@@ -1,3 +1,4 @@
+# PrintOps v1.2.0 snapshot (upstream 11122313211/PrintOps@9f21c0e, synced 2026-09-29).
 """Product taxonomy and parameter knowledge for the print-order agent.
 
 The catalog is intentionally provider-neutral.  It is based on the public

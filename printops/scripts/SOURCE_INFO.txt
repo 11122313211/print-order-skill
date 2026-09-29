@@ -1,0 +1,18 @@
+sourceRepo: https://github.com/11122313211/PrintOps
+upstreamVersion: 1.2.0
+upstreamCommit: 9f21c0e
+syncedAt: 2026-09-29
+knowledgeVersion: 2026.09.05
+priceModelVersion: 2026.09.05
+files:
+  - nlu.py
+  - order_model.py
+  - tools.py
+  - product_knowledge.py
+  - supplier_adapters.py
+note: 以上 5 个文件为上游核心模块快照（仅文件头加一行基线注释，逻辑未改）；
+  其余文件（printops_cli.py、SKILL.md）为 skill 自有代码。
+license: MIT（上游 LICENSE 见 https://github.com/11122313211/PrintOps）；
+  品类口径参考盛大印刷公开产品导航（sd2000.com）等公开信息整理。
+syncCheck: 比对上游对应路径文件头注释中的 commit 与本文件是否一致；
+  上游升级后重新复制、更新本文件并回归测试 printops_cli.py 各子命令。

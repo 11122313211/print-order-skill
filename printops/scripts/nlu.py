@@ -1,3 +1,4 @@
+# PrintOps v1.2.0 snapshot (upstream 11122313211/PrintOps@9f21c0e, synced 2026-09-29).
 """Rule-based language perception: extract order fields from natural language.
 
 Split from agent.py.  ``perceive`` is the single entry point used by the

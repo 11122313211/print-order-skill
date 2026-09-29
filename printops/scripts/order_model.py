@@ -1,3 +1,4 @@
+# PrintOps v1.2.0 snapshot (upstream 11122313211/PrintOps@9f21c0e, synced 2026-09-29).
 """Order data contracts: fields, quantity/dimension normalization, migrations.
 
 Split from agent.py so the order model can evolve (schemaVersion, new
