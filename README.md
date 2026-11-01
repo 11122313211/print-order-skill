@@ -82,6 +82,29 @@ python printops/scripts/printops_cli.py reset                       # 删除订�
 - 知识版本 `2026.09.05`、价格参数表 `2026.11.01`（均随工具输出返回，可追溯）
 - 上游升级后更新快照、刷新指纹并回归测试 `printops_cli.py`
 
+## 原创与来源边界
+
+本仓库由三类内容构成，边界如下：
+
+**原创（本仓库作者撰写）**
+
+- `printops/SKILL.md`：对话编排、追问节奏、三条安全铁律、呈现口径；
+- `printops/scripts/printops_cli.py`：把上游引擎封装成零依赖命令行内核（含路径边界与状态文件设计）；
+- `sync_upstream.py`、`validate-skills.py`、`install.sh`、`publish.sh`、`tests/smoke_test.py`：对齐、校验、安装、发布与冒烟工具链；
+- `printops/examples/`：示例对话文案（JSON 为 CLI 真实输出）；
+- `printops/scripts/rate_cards/cn-local-reference.json`：示例费率卡——按通用印刷工艺流程**人工构造**的示例参数，未采集任何供应商实价，不构成市场价格依据。
+
+**上游逐字快照（来源：[11122313211/PrintOps](https://github.com/11122313211/PrintOps)，MIT）**
+
+- `printops/scripts/` 下 12 个引擎模块（规则感知、订单契约、工具集、品类知识、平台适配及拆分出的词表/单位/测量/估价/连接器契约），仅文件头加一行基线注释，**逻辑零改动**；基线 commit 与同步日期见 `SOURCE_INFO.txt`，由 `sync_upstream.py` 与上游保持对齐。
+
+**参考整理**
+
+- 品类口径参考盛大印刷公开产品导航（[sd2000.com](https://www.sd2000.com/)）等公开信息，仅引用分类结构与品类命名做参数对齐，不代表该供应商的实时价格、产能或交期；
+- 术语解释基于通用印刷实践原创撰写。
+
+**明确不含**：第三方运行时依赖、任何网络请求、供应商实价数据、品牌素材。整体以 [MIT](LICENSE) 发布；上游快照部分遵循其原仓库的 MIT 许可与声明。
+
 ## 支持的品类（18 类）
 
 宣传册 · 画册 · 单页 · 折页 · 名片 · 邀请函 · PVC 卡 · 吊牌 · 联单 · 信封封套 · 标签 ·

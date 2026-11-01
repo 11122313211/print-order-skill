@@ -19,37 +19,8 @@ else
     echo "未找到上游仓库（$upstream_dir），跳过对齐检查"
 fi
 
-echo "== 冒烟：catalog（只读命令）=="
-tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
-( cd "$tmp" && python3 "$script_dir/printops/scripts/printops_cli.py" catalog | python3 -c "import json,sys; d=json.load(sys.stdin); assert d['ok'] and len(d['products'])==18, d; print('ok,', len(d['products']), '品类')" )
-
-echo "== 冒烟：完整订单流（ingest→set→price→quote→handoff→reset）=="
-( cd "$tmp" && python3 - "$script_dir/printops/scripts/printops_cli.py" <<'PY'
-import json, pathlib, subprocess, sys
-cli = sys.argv[1]
-
-def run(*args):
-    out = subprocess.run([sys.executable, cli, *args], capture_output=True,
-                         text=True, encoding="utf-8")
-    assert out.returncode == 0, (args, out.stderr)
-    return json.loads(out.stdout)
-
-ing = run("ingest", "--text", "印1000张名片，90×54mm，双面四色")
-assert ing["ok"] and ing["order"]["productType"] == "名片", ing
-run("set", "--field", "paper=300g铜版纸")
-est = run("price")["estimate"]
-assert est["schemaVersion"] == "2.0" and est["status"] == "ready", est["status"]
-assert est["displayRange"].startswith("¥"), est["displayRange"]
-quote = run("quote")
-assert quote["quote"]["status"] == "awaiting_human_confirmation", quote
-handoff = run("handoff", "--out", "冒烟交接单.md")
-assert handoff["status"] == "ready" and handoff["requiresHumanConfirmation"] is True, handoff
-assert pathlib.Path("冒烟交接单.md").stat().st_size > 0
-assert run("reset")["ok"]
-print("ok: ingest→price(schema 2.0)→quote→handoff→reset 全链路通过")
-PY
-)
+echo "== 冒烟：tests/smoke_test.py（catalog+订单流+多产品+terms）=="
+python3 "$script_dir/tests/smoke_test.py"
 
 echo "== 打包 dist/printops.skill =="
 python3 - "$script_dir" <<'PY'

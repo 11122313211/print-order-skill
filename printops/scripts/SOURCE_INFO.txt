@@ -25,7 +25,8 @@ note: 以上 12 个文件为上游引擎模块快照（仅文件头加一行基�
   连接器契约（supplier_connectors + supplier_contract）从核心五模块拆分为
   独立模块，与核心五模块一并快照；rate_cards/ 为估价费率卡数据，
   由 pricing_engine.DEFAULT_RATE_CARD 按"模块同级 rate_cards/ 目录"解析。
-  其余文件（printops_cli.py、SKILL.md）为 skill 自有代码。
+  其余文件（printops_cli.py、SKILL.md、examples/）为 skill 自有代码，
+  原创与来源边界全表见仓库 README「原创与来源边界」一节。
 license: MIT（上游 LICENSE 见 https://github.com/11122313211/PrintOps）；
   品类口径参考盛大印刷公开产品导航（sd2000.com）等公开信息整理。
 syncCheck: 比对上游对应路径文件头注释中的 commit 与本文件是否一致；

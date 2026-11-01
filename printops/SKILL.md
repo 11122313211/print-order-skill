@@ -47,6 +47,9 @@ $<CLI> reset                                   # 删除订单文件重新开始
 
 ## 对话工作流
 
+复杂节奏先看示例（真实 CLI 输出演示）：第一次走完整流程读 `examples/full-order-flow.md`；
+多产品拆单与未知品类分叉读 `examples/multi-product.md`。以下是要点：
+
 ### 1. 建单与追问（intake → clarify）
 
 用户说出印刷需求后，先 `ingest --text "<用户原话>"`，然后根据输出向用户回复：
@@ -126,3 +129,25 @@ $<CLI> reset                                   # 删除订单文件重新开始
 - 面向非印刷专业用户：说"表面处理"少说"表面整饰"，说"骑马钉"时补一句适用页数；
 - 数字（数量、尺寸、价格区间）必须原样引用 CLI 输出，不要心算换算、不要改写单位；
 - 每轮回复保持简短：复述变化 + 至多 2-3 个问题，不要把整个订单 JSON 贴给用户。
+
+## 引擎模块索引（只读快照，勿修改）
+
+`printops_cli.py` 调用以下引擎模块——它们是上游 PrintOps 的逐字快照（基线指纹见
+`scripts/SOURCE_INFO.txt`）。调试"某功能在哪实现"或核对口径时按此索引定位；
+这些文件由 sync_upstream.py 与上游对齐，不要手工编辑，也不要把模块源码贴给用户。
+
+| 模块 | 职责 |
+| --- | --- |
+| `scripts/nlu.py` | 规则感知：一句话需求 → 品类/数量/尺寸等字段候选、追问与弱推断 |
+| `scripts/order_model.py` | 订单契约：字段模型、dimensions 尺寸语义、校验与 fieldMeta 出处 |
+| `scripts/tools.py` | 8 个白名单工具：方案、估价、询价、交接单、预检、术语 |
+| `scripts/product_knowledge.py` | 品类知识库（18 类）与知识复审节奏（knowledgeReview） |
+| `scripts/supplier_adapters.py` | 平台能力档案与供应商适配器 |
+| `scripts/pricing_engine.py` | 估价引擎：费率卡驱动、schema 2.0 输出、blocking/assumptions |
+| `scripts/pricing_schema.py` | 估价输出的金额精度与字段契约 |
+| `scripts/domain_vocab.py` | 印刷领域词表归一（纸张/工艺/装等同义词） |
+| `scripts/unit_normalizer.py` | 单位换算与数值归一（mm、克重、份数） |
+| `scripts/measurement_model.py` | 尺寸语义解析（成品/展开/刀模/三维包装） |
+| `scripts/supplier_connectors.py` | 供应商连接器注册表（REGISTRY，本地沙箱，不发网络请求） |
+| `scripts/supplier_contract.py` | 连接器契约：操作模式与人工确认门 |
+| `scripts/rate_cards/cn-local-reference.json` | 示例费率卡（2026.11.01，量级参考、不构成报价） |
