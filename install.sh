@@ -15,6 +15,7 @@ version="1.3.0"
 name="printops-$version"
 
 [ -f "$src/SKILL.md" ] || { echo "找不到 $src/SKILL.md，请在仓库根目录运行。" >&2; exit 1; }
+rm -rf -- "$src/scripts/__pycache__"   # 本地试跑留下的字节码缓存不进技能目录（与 publish.sh 打包排除一致）
 
 targets=()
 if [ -n "${1:-}" ]; then
