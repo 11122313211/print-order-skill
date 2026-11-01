@@ -40,7 +40,8 @@ from order_model import (DIMENSION_DEFAULTS, DIMENSION_LABELS, LABELS,
                          ORDER_DEFAULTS, normalize_order_dimensions,
                          normalize_order_quantity)
 from product_knowledge import (KNOWLEDGE_VERSION, PRICE_MODEL_VERSION,
-                               parameter_state, profile_for)
+                               knowledge_review_status, parameter_state,
+                               profile_for)
 from tools import (estimate_price, explain_print_term, match_supplier_capability,
                    preflight_file, prepare_handoff, recommend_processes,
                    request_supplier_quote, validate_order)
@@ -302,7 +303,8 @@ def cmd_status(args) -> None:
           "selectedPlan": meta.get("selectedPlan"),
           "fieldMeta": meta.get("fieldMeta", {}),
           "validation": slim_validation(validation),
-          "nextQuestions": questions, "knowledgeVersion": KNOWLEDGE_VERSION})
+          "nextQuestions": questions, "knowledgeVersion": KNOWLEDGE_VERSION,
+          "knowledgeReview": knowledge_review_status()})
 
 
 def _parse_field_args(pairs: list[str]) -> list[tuple[str, str]]:
