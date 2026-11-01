@@ -11,6 +11,14 @@ cd "$script_dir"
 echo "== validate-skills =="
 python3 validate-skills.py printops
 
+echo "== 上游对齐检查 =="
+upstream_dir="${PRINTOPS_UPSTREAM:-$script_dir/../PrintOps-main}"
+if [ -d "$upstream_dir/.git" ]; then
+    python3 sync_upstream.py --upstream "$upstream_dir"
+else
+    echo "未找到上游仓库（$upstream_dir），跳过对齐检查"
+fi
+
 echo "== 冒烟：catalog（只读命令）=="
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
