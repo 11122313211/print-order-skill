@@ -44,7 +44,7 @@ def warn(message: str) -> None:
 
 
 def parse_frontmatter(text: str) -> tuple[dict[str, str], str] | None:
-    """解析扁平 YAML frontmatter；metadata 之类的嵌套块只记录键名。"""
+    """解析扁平 YAML frontmatter；嵌套映射只记录键名，块标量（> 与 |）拼接续行。"""
     if not text.startswith("---"):
         return None
     lines = text.splitlines()
@@ -53,15 +53,27 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str] | None:
     for index in range(1, len(lines)):
         if lines[index].strip() == "---":
             data: dict[str, str] = {}
-            for raw in lines[1:index]:
+            body = lines[1:index]
+            i = 0
+            while i < len(body):
+                raw = body[i]
+                i += 1
                 if not raw.strip() or raw.lstrip().startswith("#"):
                     continue
-                if raw[:1].isspace():  # 嵌套值，本检查不解析
+                if raw[:1].isspace():  # 无所属键的缩进行，忽略
                     continue
                 key, sep, value = raw.partition(":")
                 if not sep:
                     continue
-                data[key.strip()] = value.strip().strip("'\"")
+                value = value.strip()
+                if value in (">", "|", ">-", "|-", ">+", "|+"):
+                    block: list[str] = []
+                    while i < len(body) and (not body[i].strip() or body[i][:1].isspace()):
+                        if body[i].strip():
+                            block.append(body[i].strip())
+                        i += 1
+                    value = " ".join(block)
+                data[key.strip()] = value.strip("'\"")
             return data, "\n".join(lines[index + 1:])
     return None
 
@@ -119,7 +131,9 @@ def check_skill(skill_dir: Path) -> None:
         for path in sorted(target.rglob("*")):
             if not path.is_file():
                 continue
-            relative = str(path.relative_to(skill_dir))
+            if "__pycache__" in path.parts or path.suffix == ".pyc":
+                continue  # 字节码缓存不是技能资源
+            relative = path.relative_to(skill_dir).as_posix()  # Windows 分隔符会与正文引用永不相等
             if not any(relative == ref or relative.startswith(ref + "/") for ref in mentioned):
                 warn(f"{relative} 没有被正文引用；模型不会知道什么时候打开它")
 

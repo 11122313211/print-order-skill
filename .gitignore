@@ -16,3 +16,6 @@ venv/
 *.sqlite3-shm
 *.sqlite3-wal
 *.log
+
+# 发布打包产物（publish.sh 可重新生成）
+dist/
