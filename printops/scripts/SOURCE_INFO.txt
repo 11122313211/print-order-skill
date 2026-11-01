@@ -1,16 +1,30 @@
 sourceRepo: https://github.com/11122313211/PrintOps
-upstreamVersion: 1.2.0
-upstreamCommit: 9f21c0e
-syncedAt: 2026-09-29
+upstreamVersion: 1.3.0
+upstreamCommit: 7226a25
+syncedAt: 2026-11-01
 knowledgeVersion: 2026.09.05
-priceModelVersion: 2026.09.05
+priceModelVersion: 2026.11.01
 files:
   - nlu.py
   - order_model.py
   - tools.py
   - product_knowledge.py
   - supplier_adapters.py
-note: 以上 5 个文件为上游核心模块快照（仅文件头加一行基线注释，逻辑未改）；
+  - domain_vocab.py
+  - unit_normalizer.py
+  - measurement_model.py
+  - pricing_engine.py
+  - pricing_schema.py
+  - supplier_connectors.py
+  - supplier_contract.py
+data:
+  - rate_cards/cn-local-reference.json
+note: 以上 12 个文件为上游引擎模块快照（仅文件头加一行基线注释，逻辑未改）；
+  自上游 v1.3.0 起，词表（domain_vocab）、单位换算（unit_normalizer）、
+  测量语义（measurement_model）、估价引擎（pricing_engine + pricing_schema）、
+  连接器契约（supplier_connectors + supplier_contract）从核心五模块拆分为
+  独立模块，与核心五模块一并快照；rate_cards/ 为估价费率卡数据，
+  由 pricing_engine.DEFAULT_RATE_CARD 按"模块同级 rate_cards/ 目录"解析。
   其余文件（printops_cli.py、SKILL.md）为 skill 自有代码。
 license: MIT（上游 LICENSE 见 https://github.com/11122313211/PrintOps）；
   品类口径参考盛大印刷公开产品导航（sd2000.com）等公开信息整理。

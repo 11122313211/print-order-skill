@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# PrintOps skill CLI — 基于上游 11122313211/PrintOps@9f21c0e（v1.2.0）核心模块，同步日期 2026-09-29。
+# PrintOps skill CLI — 基于上游 11122313211/PrintOps@7226a25（v1.3.0）核心模块，同步日期 2026-11-01。
 # 基线指纹与同步说明见同目录 SOURCE_INFO.txt。
 """PrintOps CLI：印刷订单智能体的确定性内核。
 

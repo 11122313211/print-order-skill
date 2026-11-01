@@ -1,4 +1,4 @@
-# PrintOps v1.2.0 snapshot (upstream 11122313211/PrintOps@9f21c0e, synced 2026-09-29).
+# PrintOps v1.3.0 snapshot (upstream 11122313211/PrintOps@7226a25, synced 2026-11-01).
 """Product taxonomy and parameter knowledge for the print-order agent.
 
 The catalog is intentionally provider-neutral.  It is based on the public
@@ -8,7 +8,10 @@ shop terminology; supplier adapters can map these fields later.
 
 from __future__ import annotations
 
+import json
 from copy import deepcopy
+from datetime import date, timedelta
+from pathlib import Path
 from typing import Any
 
 
@@ -26,12 +29,14 @@ KNOWLEDGE_MANIFEST: dict[str, Any] = {
     "version": KNOWLEDGE_VERSION,
     "schemaVersion": "1.0",
     "lastReviewed": "2026-09-05",
+    "reviewCadenceDays": 90,
+    "nextReviewAt": "2026-12-04",
     "sources": [
         {
             "id": "sd2000-navigation",
             "title": "盛大印刷公开产品导航",
             "url": CATALOG_SOURCE,
-            "scope": "产品分类参考，不代表实时价格、产能或交期",
+            "scope": "仅品类导航参考：只引用其公开分类结构与品类命名，不代表页面展示的任何价格、产能或交期",
         },
         {
             "id": "common-print-practice",
@@ -41,7 +46,7 @@ KNOWLEDGE_MANIFEST: dict[str, Any] = {
         {
             "id": "pricing-model-sample",
             "title": "示例价格参数表",
-            "scope": "estimate_price 的量级参考；基数为示例数据，不构成任何供应商实价",
+            "scope": "estimate_price 的量级参考（对应 rate card 来源 industry-standard-flow-2026-10）；基数为按通用工艺流程人工构造的示例数据，不构成任何供应商实价",
         },
     ],
     "dimensionDefinitions": {
@@ -73,44 +78,85 @@ KNOWLEDGE_MANIFEST: dict[str, Any] = {
     },
 }
 
-# Example price parameters consumed by ``estimate_price``.  Every number here
-# is SAMPLE DATA for order-of-magnitude guidance only; it is versioned so a
-# quote reference can be traced to the exact table that produced it.
-PRICE_MODEL_VERSION = "2026.09.05"
-PRICE_MODEL: dict[str, Any] = {
-    "version": PRICE_MODEL_VERSION,
-    "disclaimer": "示例参数，仅用于费用量级参考，不构成报价；实际价格以供应商回复为准。",
-    # Per-order base covering plate/make-ready effort for a small job.
-    "categories": {
-        "名片": 60, "单页": 120, "折页": 150, "数码印刷": 100, "海报": 90,
-        "喷画": 130, "PVC": 150, "宣传册": 300, "画册": 380, "联单": 200,
-        "信封封套": 220, "标签": 260, "吊牌": 240, "包装盒": 480,
-        "手提袋": 450, "纸杯": 400, "邀请函": 180,
-    },
-    "defaultBase": 200,
-    # Quantity tiers approximate per-unit price steps; going over a tier
-    # boundary drops the total factor instead of pricing linearly.
-    "quantityTiers": [
-        {"upTo": 500, "factor": 1.0},
-        {"upTo": 1000, "factor": 0.9},
-        {"upTo": 5000, "factor": 0.75},
-        {"upTo": 20000, "factor": 0.62},
-        {"upTo": None, "factor": 0.55},
-    ],
-    # Additive-process multipliers; the highest matching factor wins.
-    "finishingFactors": {
-        "覆膜": 1.15, "哑膜": 1.15, "亮膜": 1.1, "烫金": 1.35, "烫银": 1.35,
-        "局部UV": 1.3, "局部 UV": 1.3, "击凸": 1.25, "压凹": 1.2, "上光": 1.08,
-        "专色": 1.2,
-    },
-    # Press make-ready floor: tiny orders cannot fall below this.
-    "minimumTotal": 100,
-    # 专版单独制版的版费/开机摊销系数（合版为基准 1.0）。
-    "modeFactors": {"合版": 1.0, "专版": 1.6},
-    # 常规生产周期示例（不含运输与打样；免责见方案区说明行）。
-    "leadHints": {"合版": "2-4 天", "专版": "5-8 天"},
-    "band": {"low": 0.85, "high": 1.25},
-}
+# Compatibility facade; all monetary parameters live in a versioned JSON card.
+# This card is deliberately illustrative and is never a supplier price feed.
+from pricing_engine import load_rate_card
+
+PRICE_MODEL: dict[str, Any] = load_rate_card()
+PRICE_MODEL_VERSION = PRICE_MODEL["version"]
+
+# Review cadence for the knowledge base itself.  The manifest records when the
+# knowledge was last human-reviewed; ``knowledge_review_status`` turns that
+# static record into an injectable, testable freshness state.  Version checks
+# elsewhere compare reported strings for strict equality (see agent's plan-meta
+# normalization); staleness here is a schedule, so it is derived from dates.
+REVIEW_CADENCE_DAYS = 90
+REVIEW_OVERDUE_GRACE_DAYS = 30
+RATE_CARD_PATH = Path(__file__).resolve().parent / "rate_cards" / "cn-local-reference.json"
+
+
+def _rate_card_expiry(today: date) -> dict[str, Any]:
+    """Read the active rate card's validity window without raising.
+
+    Any read/parse/field error degrades to ``status="unknown"`` so freshness
+    reporting never blocks on a malformed file; structural card problems are
+    the knowledge review CLI's job, not this accessor's.
+    """
+    info: dict[str, Any] = {"path": RATE_CARD_PATH.name, "version": None,
+                            "effectiveFrom": None, "expiresAt": None,
+                            "daysUntilExpiry": None, "status": "unknown"}
+    try:
+        card = json.loads(RATE_CARD_PATH.read_text(encoding="utf-8"))
+        expires_at = date.fromisoformat(str(card["expiresAt"]))
+    except (OSError, ValueError, KeyError, TypeError):
+        return info
+    info.update({
+        "version": str(card.get("version") or "") or None,
+        "effectiveFrom": str(card.get("effectiveFrom") or "") or None,
+        "expiresAt": expires_at.isoformat(),
+        "daysUntilExpiry": (expires_at - today).days,
+        "status": "tracked",
+    })
+    return info
+
+
+def knowledge_review_status(today: date | None = None) -> dict[str, Any]:
+    """Return the review freshness of the knowledge base and active rate card.
+
+    ``status`` is "ok" while ``today`` is earlier than
+    ``lastReviewed + reviewCadenceDays`` (90 days), "due" once that cadence is
+    reached, and "overdue" after ``REVIEW_OVERDUE_GRACE_DAYS`` (30) extra days
+    beyond the cadence, so a missed review escalates instead of resting at
+    "due" indefinitely.  ``today`` is injectable for deterministic tests; a
+    ``today`` before ``lastReviewed`` (clock skew) simply counts as "ok".
+    ``nextReviewAt`` is derived from ``lastReviewed + cadence`` and the
+    manifest's declared value is returned alongside so the review CLI can flag
+    drift between the two.  The ``rateCard`` block reports the days remaining
+    before the card's ``expiresAt``; a missing or unreadable rate card file
+    degrades to ``status="unknown"`` instead of raising.
+    """
+    today = today or date.today()
+    cadence = int(KNOWLEDGE_MANIFEST.get("reviewCadenceDays") or REVIEW_CADENCE_DAYS)
+    last_reviewed = date.fromisoformat(str(KNOWLEDGE_MANIFEST["lastReviewed"]))
+    derived_next = last_reviewed + timedelta(days=cadence)
+    days_since = (today - last_reviewed).days
+    if days_since < cadence:
+        status = "ok"
+    elif days_since < cadence + REVIEW_OVERDUE_GRACE_DAYS:
+        status = "due"
+    else:
+        status = "overdue"
+    return {
+        "today": today.isoformat(),
+        "knowledgeVersion": KNOWLEDGE_VERSION,
+        "lastReviewed": last_reviewed.isoformat(),
+        "reviewCadenceDays": cadence,
+        "nextReviewAt": derived_next.isoformat(),
+        "declaredNextReviewAt": str(KNOWLEDGE_MANIFEST.get("nextReviewAt") or ""),
+        "status": status,
+        "daysSinceReview": days_since,
+        "rateCard": _rate_card_expiry(today),
+    }
 
 
 PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
@@ -164,12 +210,26 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
         "category": "名片/卡片",
         "aliases": ["名片", "个人名片", "企业名片", "卡片"],
         "summary": "小尺寸高频商务物料，核心是成品尺寸、单双面、纸张厚度和圆角/特殊工艺。",
+        # The generic paper field is what chat and the planner fill; mirror it
+        # into this profile parameter so the visible "名片材质" field agrees.
+        "paperSpec": "cardStock",
         "parameters": [
             {"key": "cardStock", "label": "名片材质", "required": False, "question": "想用铜版纸、白卡纸还是特种纸？", "hint": "常见名片会用 250g-350g 卡纸；特殊纸需先打样。"},
             {"key": "cardCorners", "label": "圆角", "required": False, "question": "需要圆角吗？", "hint": "圆角属于额外模切/后道，需在文件和报价中标注。"},
         ],
         "defaultBinding": "无需装订",
         "recommendation": "优先确认单双面、卡纸克重和圆角，再决定是否加专色、烫金。",
+    },
+    "邀请函": {
+        "category": "名片/卡片",
+        "aliases": ["邀请函", "请柬", "请帖", "喜帖", "贺卡"],
+        "summary": "仪式感卡片类物料，纸张质感、折叠形态和烫金/击凸等工艺决定档次。",
+        "parameters": [
+            {"key": "folding", "label": "折叠方式", "required": False, "question": "邀请函需要折叠吗？", "hint": "折卡需同时确认成品尺寸与展开尺寸，折痕处避免重要内容。"},
+            {"key": "inserts", "label": "内页/内衬", "required": False, "question": "是否需要内页或内衬卡？", "hint": "内页单独用纸时需按独立物料确认数量与纸张，成本另计。"},
+        ],
+        "defaultBinding": "无需装订",
+        "recommendation": "先确认单张还是折卡与成品尺寸，再选纸张质感与烫金、击凸等表面工艺。",
     },
     "PVC卡": {
         "category": "名片/卡片",
@@ -225,6 +285,7 @@ PRODUCT_CATALOG: dict[str, dict[str, Any]] = {
             {"key": "labelMaterial", "label": "面材", "required": True, "question": "标签面材用铜版不干胶、透明膜、PET 还是其他？", "hint": "面材决定耐水、耐磨、透明效果和成本。"},
             {"key": "labelShape", "label": "标签形状", "required": True, "question": "标签是方形、圆形还是异形？", "hint": "异形标签需要刀模；圆角也要明确半径或效果。"},
             {"key": "adhesive", "label": "胶水类型", "required": False, "question": "需要普通胶、可移胶还是强粘胶？", "hint": "贴纸的使用表面和温度决定胶水选择。"},
+            {"key": "labelFormat", "label": "交付形式", "required": False, "question": "标签按张交付还是卷装？", "hint": "张装和卷装使用不同设备；本地估算目前仅标定张装。"},
         ],
         "defaultBinding": "模切 / 排废",
         "recommendation": "先确认贴在哪里、是否接触水/油，再选面材和胶水。",
@@ -328,11 +389,26 @@ GENERIC_PROFILE = {
 PRODUCT_SPEC_EXTRAS: dict[str, set[str]] = {
     "包装盒": {"boxSizeInner", "boxSizeOuter"},
     "名片": {"cardColor"},
-    "手提袋": {"loadBearing"},
+    "手提袋": {"loadBearing", "boxStructure"},
+    "信封封套": {"boxStructure"},
     "海报": {"displaySize"},
     "喷画": {"displaySize"},
     "PVC": {"boardSize"},
 }
+
+
+def paper_spec_key(product: str | None = None) -> str:
+    """Return the profile parameter that mirrors the generic paper field.
+
+    Chat and planner patches fill ``paper``; the settings form shows the
+    profile parameter (for example 名片材质).  A category declares the mirror
+    with ``paperSpec``; categories without one have no linked field.
+    """
+    if not product:
+        return ""
+    canonical = alias_map().get(str(product), str(product))
+    profile = PRODUCT_CATALOG.get(canonical, GENERIC_PROFILE)
+    return str(profile.get("paperSpec") or "")
 
 
 def known_product_spec_keys(product: str | None = None) -> set[str]:
@@ -367,11 +443,11 @@ MIN_QUANTITY = {
     "名片": 100, "单页": 500, "折页": 500, "海报": 100, "宣传册": 100,
     "画册": 100, "标签": 500, "吊牌": 500, "包装盒": 200, "手提袋": 500,
     "纸杯": 10000, "联单": 20, "信封封套": 200, "PVC": 10, "喷画": 10,
-    "PVC卡": 100, "数码印刷": 50,
+    "PVC卡": 100, "数码印刷": 50, "邀请函": 500,
 }
 PRINT_MODE_HINT = {
     "名片": "合版优先", "单页": "合版优先", "折页": "合版优先", "海报": "合版优先",
-    "标签": "合版优先", "吊牌": "合版优先",
+    "标签": "合版优先", "吊牌": "合版优先", "邀请函": "合版优先",
     "画册": "专版常见", "宣传册": "专版常见", "包装盒": "专版常见", "手提袋": "专版常见",
     "信封封套": "专版常见", "PVC卡": "专版常见", "纸杯": "专版常见",
     "喷画": "两者均可", "PVC": "两者均可", "联单": "两者均可", "数码印刷": "两者均可",

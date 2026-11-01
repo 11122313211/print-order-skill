@@ -14,7 +14,7 @@ python3 validate-skills.py printops
 echo "== 冒烟：catalog（只读命令）=="
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-( cd "$tmp" && python3 "$script_dir/printops/scripts/printops_cli.py" catalog | python3 -c "import json,sys; d=json.load(sys.stdin); assert d['ok'] and len(d['products'])==17, d; print('ok,', len(d['products']), '品类')" )
+( cd "$tmp" && python3 "$script_dir/printops/scripts/printops_cli.py" catalog | python3 -c "import json,sys; d=json.load(sys.stdin); assert d['ok'] and len(d['products'])==18, d; print('ok,', len(d['products']), '品类')" )
 
 echo "== 打包 dist/printops.skill =="
 python3 - "$script_dir" <<'PY'

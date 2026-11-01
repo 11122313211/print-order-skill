@@ -11,7 +11,7 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 src="$script_dir/printops"
-version="1.2.0"
+version="1.3.0"
 name="printops-$version"
 
 [ -f "$src/SKILL.md" ] || { echo "找不到 $src/SKILL.md，请在仓库根目录运行。" >&2; exit 1; }
